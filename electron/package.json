@@ -1,0 +1,48 @@
+{
+  "name": "lithelper",
+  "version": "0.1.0",
+  "description": "Personal Literature Discovery Desktop App",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "author": "VossAI Consulting (VossAIConsulting.com)",
+  "license": "CC-BY-SA-4.0",
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.lithelper.app",
+    "productName": "LitHelper",
+    "directories": {
+      "output": "../dist-electron"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "backend-manager.js"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist/lithelper-backend",
+        "to": "backend/lithelper-backend"
+      },
+      {
+        "from": "../frontend/dist",
+        "to": "frontend/dist"
+      }
+    ],
+    "mac": {
+      "target": "dmg",
+      "icon": null
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "linux": {
+      "target": "AppImage"
+    }
+  }
+}

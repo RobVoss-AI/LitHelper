@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+backend/.venv/
+backend/dist/
+backend/build/
+backend/*.spec
+*.db
+
+# Node
+node_modules/
+frontend/dist/
+electron/node_modules/
+
+# Electron build output
+dist-electron/
+
+# IDE
+.idea/
+.vscode/
+.claude/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.pem
+
+# LitHelper data
+*.sqlite
+*.sqlite3
