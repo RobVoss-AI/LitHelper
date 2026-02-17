@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="frontend/public/favicon.svg" />
+  <title>LitHelper — Personal Literature Discovery Desktop App</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Reset ── */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    /* ── Design Tokens (matching CiteBridge) ── */
+    :root {
+      --ink: #1a1a2e;
+      --paper: #f8f6f1;
+      --accent: #c0392b;
+      --accent-light: #e74c3c;
+      --gold: #d4a843;
+      --sage: #5a7a6a;
+      --muted: #8a8578;
+      --border: #d6d0c4;
+      --serif: 'DM Serif Display', serif;
+      --sans: 'Instrument Sans', sans-serif;
+      --mono: 'JetBrains Mono', monospace;
+    }
+
+    body {
+      font-family: var(--sans);
+      color: var(--ink);
+      background: var(--paper);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── Noise Overlay ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(248, 246, 241, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--accent); }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      list-style: none;
+    }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--ink); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.65rem 1.5rem;
+      border-radius: 8px;
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.25s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover {
+      background: var(--accent-light);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(192, 57, 43, 0.3);
+    }
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink);
+      border: 1.5px solid var(--border);
+    }
+    .btn-secondary:hover {
+      border-color: var(--ink);
+      transform: translateY(-1px);
+    }
+    .btn-gold {
+      background: var(--gold);
+      color: #fff;
+    }
+    .btn-gold:hover {
+      background: #c49a38;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(212, 168, 67, 0.3);
+    }
+
+    /* ── Hero ── */
+    .hero {
+      padding: 10rem 2rem 6rem;
+      text-align: center;
+      position: relative;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--sage);
+      border: 1px solid var(--sage);
+      border-radius: 999px;
+      padding: 0.3rem 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 {
+      font-family: var(--serif);
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+    .hero h1 span { color: var(--accent); }
+    .hero p {
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+      font-size: 1.1rem;
+      color: var(--muted);
+    }
+    .hero-ctas {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* ── Animated Graph Visual ── */
+    .hero-visual {
+      margin-top: 4rem;
+      display: flex;
+      justify-content: center;
+    }
+    .hero-visual svg {
+      width: 100%;
+      max-width: 600px;
+    }
+    .graph-node {
+      animation: pulse 3s ease-in-out infinite;
+    }
+    .graph-node:nth-child(2) { animation-delay: 0.5s; }
+    .graph-node:nth-child(3) { animation-delay: 1s; }
+    .graph-node:nth-child(4) { animation-delay: 1.5s; }
+    .graph-line {
+      stroke-dasharray: 8 4;
+      animation: dash 2s linear infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+    @keyframes dash {
+      to { stroke-dashoffset: -24; }
+    }
+
+    /* ── Problem Section ── */
+    .problem {
+      background: var(--ink);
+      color: #fff;
+      padding: 5rem 2rem;
+    }
+    .problem .container { max-width: 960px; margin: 0 auto; }
+    .problem h2 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      margin-bottom: 2.5rem;
+      text-align: center;
+    }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 2rem;
+    }
+    .problem-card {
+      padding: 1.5rem;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.04);
+    }
+    .problem-card .icon {
+      font-size: 1.8rem;
+      margin-bottom: 0.75rem;
+    }
+    .problem-card h3 {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .problem-card p {
+      font-size: 0.88rem;
+      color: rgba(255,255,255,0.65);
+      line-height: 1.6;
+    }
+
+    /* ── Features ── */
+    section { padding: 5rem 2rem; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--sage);
+      margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-family: var(--serif);
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    .section-subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 600px;
+      margin-bottom: 3rem;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .feature-card {
+      padding: 1.75rem;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      transition: all 0.25s;
+    }
+    .feature-card:hover {
+      border-left-color: var(--accent);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .feature-card .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card h3 {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .feature-card p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .fi-red { background: rgba(192,57,43,0.1); }
+    .fi-gold { background: rgba(212,168,67,0.1); }
+    .fi-sage { background: rgba(90,122,106,0.1); }
+    .fi-ink { background: rgba(26,26,46,0.08); }
+
+    /* ── How It Works ── */
+    .how-it-works { background: #fff; }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2rem;
+      counter-reset: step;
+    }
+    .step {
+      position: relative;
+      padding: 1.5rem;
+      counter-increment: step;
+    }
+    .step::before {
+      content: counter(step);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .step h3 {
+      font-family: var(--sans);
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .step p {
+      font-size: 0.88rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    /* ── Download / Install ── */
+    .download {
+      background: var(--ink);
+      color: #fff;
+      text-align: center;
+    }
+    .download h2 {
+      font-family: var(--serif);
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+    }
+    .download > .container > p {
+      color: rgba(255,255,255,0.6);
+      margin-bottom: 2.5rem;
+      font-size: 1rem;
+    }
+    .download-options {
+      display: flex;
+      justify-content: center;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .download-card {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 2rem 2.5rem;
+      text-align: center;
+      min-width: 200px;
+      transition: all 0.25s;
+    }
+    .download-card:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-2px);
+    }
+    .download-card .os-icon {
+      font-size: 2.2rem;
+      margin-bottom: 0.75rem;
+    }
+    .download-card h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .download-card .format {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 1.25rem;
+    }
+    .download-card .btn {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .install-alt {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.5);
+    }
+    .install-alt a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+    .install-alt a:hover { text-decoration: underline; }
+
+    /* ── Use Cases ── */
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1.5rem;
+    }
+    .use-case {
+      padding: 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: #fff;
+      transition: all 0.25s;
+    }
+    .use-case:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .use-case .emoji { font-size: 1.6rem; margin-bottom: 0.75rem; }
+    .use-case h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .use-case p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    /* ── Credibility ── */
+    .credibility {
+      background: #fff;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .cred-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 2rem;
+      text-align: center;
+    }
+    .cred-item .number {
+      font-family: var(--serif);
+      font-size: 2rem;
+      color: var(--accent);
+    }
+    .cred-item p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ── Footer ── */
+    footer {
+      padding: 3rem 2rem;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+    footer p {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 0.5rem;
+    }
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    footer a:hover { text-decoration: underline; }
+    .footer-license {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 0.75rem;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 768px) {
+      nav { padding: 0.75rem 1rem; }
+      .nav-links { gap: 1rem; }
+      .nav-links a { font-size: 0.8rem; }
+      .hero { padding: 8rem 1.5rem 4rem; }
+      section { padding: 3.5rem 1.5rem; }
+      .download-options { flex-direction: column; align-items: center; }
+    }
+
+    /* ── Fade-in Animation ── */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.6s ease forwards;
+    }
+    .fade-in:nth-child(2) { animation-delay: 0.1s; }
+    .fade-in:nth-child(3) { animation-delay: 0.2s; }
+    .fade-in:nth-child(4) { animation-delay: 0.3s; }
+    @keyframes fadeUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Nav ── -->
+<nav>
+  <a href="#" class="nav-logo">Lit<span>Helper</span></a>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#use-cases">Use Cases</a></li>
+    <li><a href="#how-it-works">How It Works</a></li>
+    <li><a href="#download" class="btn btn-primary">Download LitHelper &darr;</a></li>
+  </ul>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+  <div class="fade-in">
+    <div class="hero-badge">By academics, for academics</div>
+    <h1>Discover Literature Like<br />Never <span>Before</span></h1>
+    <p>
+      LitHelper combines the best of Research Rabbit and Litmaps into one free desktop app.
+      Citation graphs, multi-seed discovery, Zotero sync &mdash; powered by OpenAlex's
+      database of 250M+ academic works.
+    </p>
+    <div class="hero-ctas">
+      <a href="#download" class="btn btn-primary">Download for Mac &darr;</a>
+      <a href="https://github.com/RobVoss-AI/LitHelper" class="btn btn-secondary">View on GitHub &rarr;</a>
+    </div>
+  </div>
+
+  <!-- Animated Citation Graph SVG -->
+  <div class="hero-visual fade-in">
+    <svg viewBox="0 0 600 260" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Edges -->
+      <line x1="300" y1="60" x2="160" y2="150" class="graph-line" stroke="#c0392b" stroke-width="2" />
+      <line x1="300" y1="60" x2="440" y2="150" class="graph-line" stroke="#d4a843" stroke-width="2" />
+      <line x1="160" y1="150" x2="100" y2="230" class="graph-line" stroke="#5a7a6a" stroke-width="1.5" />
+      <line x1="160" y1="150" x2="240" y2="230" class="graph-line" stroke="#5a7a6a" stroke-width="1.5" />
+      <line x1="440" y1="150" x2="380" y2="230" class="graph-line" stroke="#c0392b" stroke-width="1.5" />
+      <line x1="440" y1="150" x2="500" y2="230" class="graph-line" stroke="#d4a843" stroke-width="1.5" />
+      <line x1="300" y1="60" x2="300" y2="180" class="graph-line" stroke="#8a8578" stroke-width="1" stroke-opacity="0.4" />
+      <!-- Nodes -->
+      <circle cx="300" cy="60" r="18" fill="#c0392b" class="graph-node" opacity="0.9" />
+      <circle cx="160" cy="150" r="14" fill="#d4a843" class="graph-node" opacity="0.85" />
+      <circle cx="440" cy="150" r="14" fill="#5a7a6a" class="graph-node" opacity="0.85" />
+      <circle cx="100" cy="230" r="10" fill="#c0392b" class="graph-node" opacity="0.7" />
+      <circle cx="240" cy="230" r="10" fill="#d4a843" class="graph-node" opacity="0.7" />
+      <circle cx="380" cy="230" r="10" fill="#5a7a6a" class="graph-node" opacity="0.7" />
+      <circle cx="500" cy="230" r="10" fill="#c0392b" class="graph-node" opacity="0.7" />
+      <circle cx="300" cy="180" r="8" fill="#8a8578" class="graph-node" opacity="0.5" />
+      <!-- Labels -->
+      <text x="300" y="20" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="10" fill="#8a8578">Seed Paper</text>
+      <text x="120" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8578">Cited By</text>
+      <text x="490" y="148" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#8a8578">References</text>
+    </svg>
+  </div>
+</section>
+
+<!-- ── Problem ── -->
+<section class="problem">
+  <div class="container">
+    <h2>The Problem with Literature Discovery</h2>
+    <div class="problem-grid">
+      <div class="problem-card fade-in">
+        <div class="icon">&#128269;</div>
+        <h3>Scattered Across Platforms</h3>
+        <p>Google Scholar for search, Research Rabbit for graphs, Litmaps for timelines, Zotero for management. Four tools, four workflows, zero integration.</p>
+      </div>
+      <div class="problem-card fade-in">
+        <div class="icon">&#128176;</div>
+        <h3>Paywalls & Limits</h3>
+        <p>Research Rabbit merged into Litmaps. Free tiers are limited. Premium plans add up. Your discovery workflow shouldn't depend on a subscription.</p>
+      </div>
+      <div class="problem-card fade-in">
+        <div class="icon">&#128683;</div>
+        <h3>No Breadcrumbs</h3>
+        <p>You find a great paper, but can't retrace how you got there. Discovery paths are lost the moment you close a tab.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Features ── -->
+<section id="features">
+  <div class="container">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything You Need in One App</h2>
+    <p class="section-subtitle">Free, open-source, and built by a researcher who uses these tools every day.</p>
+    <div class="features-grid">
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-red">&#128270;</div>
+        <h3>Smart Paper Search</h3>
+        <p>Search 250M+ works via OpenAlex. See citations, year, open access status, and authors at a glance. Cmd+K to jump to search anytime.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-gold">&#128752;</div>
+        <h3>Citation Network Graphs</h3>
+        <p>Interactive force-directed graphs. Nodes sized by citation count, colored by year. Right-click to expand. Toggle graph, scatter, or split view.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-sage">&#127793;</div>
+        <h3>Multi-Seed Discovery</h3>
+        <p>Add 3-5 seed papers, then find overlooked work via co-citation analysis or bibliographic coupling. Ranked by overlap score.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-ink">&#128194;</div>
+        <h3>Collections & Export</h3>
+        <p>Organize papers into named collections. Export as BibTeX, RIS, or shareable JSON bundles. One-click save from any paper card.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-red">&#128101;</div>
+        <h3>Author Tracking</h3>
+        <p>Follow researchers you care about. Get notified when they publish new work. View publication timelines and co-author networks.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-gold">&#128276;</div>
+        <h3>Monitored Searches</h3>
+        <p>Save any search query and let LitHelper check for new matching papers on your schedule. Never miss relevant new work.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-sage">&#129517;</div>
+        <h3>Research Trails</h3>
+        <p>Record your exploration path. Navigate back and forward through breadcrumbs. Save trails to revisit your exact research journey.</p>
+      </div>
+      <div class="feature-card fade-in">
+        <div class="feature-icon fi-ink">&#128218;</div>
+        <h3>Zotero Integration</h3>
+        <p>Two-way sync with your Zotero library. Pull collections in, push discoveries back. Import .bib and .ris files with OpenAlex resolution.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── How It Works ── -->
+<section id="how-it-works" class="how-it-works">
+  <div class="container">
+    <div class="section-label">How It Works</div>
+    <h2 class="section-title">Up and Running in Minutes</h2>
+    <p class="section-subtitle">No API keys, no accounts, no configuration. Just download and start discovering.</p>
+    <div class="steps">
+      <div class="step fade-in">
+        <h3>Download & Launch</h3>
+        <p>Download LitHelper for your platform. Double-click to open. The backend starts automatically &mdash; no terminal needed.</p>
+      </div>
+      <div class="step fade-in">
+        <h3>Search & Explore</h3>
+        <p>Search for any topic or paper. Click "Explore" to build a citation graph. Right-click nodes to expand the network in any direction.</p>
+      </div>
+      <div class="step fade-in">
+        <h3>Discover & Save</h3>
+        <p>Use multi-seed discovery to find overlooked papers. Save everything into collections. Export to Zotero, BibTeX, or share with colleagues.</p>
+      </div>
+      <div class="step fade-in">
+        <h3>Stay Current</h3>
+        <p>Track authors, monitor searches, and record your trails. LitHelper keeps working for you even when you're not actively searching.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Use Cases ── -->
+<section id="use-cases">
+  <div class="container">
+    <div class="section-label">Who It's For</div>
+    <h2 class="section-title">Built for Every Stage of Research</h2>
+    <p class="section-subtitle">Whether you're starting a lit review or staying current in your field.</p>
+    <div class="use-cases-grid">
+      <div class="use-case fade-in">
+        <div class="emoji">&#127891;</div>
+        <h3>Graduate Students</h3>
+        <p>Map your dissertation's literature landscape. Find the seminal papers and emerging work your committee will ask about.</p>
+      </div>
+      <div class="use-case fade-in">
+        <div class="emoji">&#128218;</div>
+        <h3>Faculty</h3>
+        <p>Accelerate literature reviews. Track competitors' publications. Discover interdisciplinary connections you'd otherwise miss.</p>
+      </div>
+      <div class="use-case fade-in">
+        <div class="emoji">&#127981;</div>
+        <h3>Librarians</h3>
+        <p>Support patrons with visual citation analysis. Create curated reading lists from collections. Export to any reference manager.</p>
+      </div>
+      <div class="use-case fade-in">
+        <div class="emoji">&#128300;</div>
+        <h3>Research Teams</h3>
+        <p>Share collections as JSON bundles. Everyone sees the same citation landscape. Collaborative discovery without per-seat pricing.</p>
+      </div>
+      <div class="use-case fade-in">
+        <div class="emoji">&#128640;</div>
+        <h3>Independent Researchers</h3>
+        <p>All the power of Research Rabbit and Litmaps, completely free. No institutional login required. Your data stays on your machine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Download ── -->
+<section id="download" class="download">
+  <div class="container">
+    <div class="section-label" style="color: var(--gold);">Download</div>
+    <h2>Get LitHelper</h2>
+    <p>Free, open-source, no account required. Your data stays on your machine.</p>
+
+    <div class="download-options">
+      <div class="download-card">
+        <div class="os-icon">&#63743;</div>
+        <h3>macOS</h3>
+        <div class="format">.dmg &middot; Apple Silicon & Intel</div>
+        <a href="https://github.com/RobVoss-AI/LitHelper/releases/latest/download/LitHelper.dmg" class="btn btn-primary">Download for Mac</a>
+      </div>
+      <div class="download-card">
+        <div class="os-icon">&#129695;</div>
+        <h3>Windows</h3>
+        <div class="format">.exe installer</div>
+        <a href="https://github.com/RobVoss-AI/LitHelper/releases/latest/download/LitHelper-Setup.exe" class="btn btn-primary">Download for Windows</a>
+      </div>
+      <div class="download-card">
+        <div class="os-icon">&#128039;</div>
+        <h3>Linux</h3>
+        <div class="format">.AppImage</div>
+        <a href="https://github.com/RobVoss-AI/LitHelper/releases/latest/download/LitHelper.AppImage" class="btn btn-primary">Download for Linux</a>
+      </div>
+    </div>
+
+    <p class="install-alt">
+      Or build from source: <a href="https://github.com/RobVoss-AI/LitHelper">github.com/RobVoss-AI/LitHelper</a>
+    </p>
+  </div>
+</section>
+
+<!-- ── Credibility ── -->
+<section class="credibility">
+  <div class="container">
+    <div class="cred-grid">
+      <div class="cred-item">
+        <div class="number">250M+</div>
+        <p>Academic works searchable via OpenAlex</p>
+      </div>
+      <div class="cred-item">
+        <div class="number">100%</div>
+        <p>Free &amp; open-source, no paywalls</p>
+      </div>
+      <div class="cred-item">
+        <div class="number">Ph.D.</div>
+        <p>Built by Dr. Rob Voss, OpenAI Academy Fellow</p>
+      </div>
+      <div class="cred-item">
+        <div class="number">0</div>
+        <p>Data sent to the cloud &mdash; everything stays local</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+  <p>
+    <strong>LitHelper</strong> &mdash; by academics, for academics.
+    Built by <a href="https://VossAIConsulting.com">Dr. Rob Voss, VossAI Consulting</a>.
+  </p>
+  <p>
+    <a href="https://github.com/RobVoss-AI/LitHelper">GitHub</a> &middot;
+    <a href="https://VossAIConsulting.com">VossAIConsulting.com</a> &middot;
+    <a href="https://robvoss.com">robvoss.com</a>
+  </p>
+  <div class="footer-license">Licensed under CC BY-SA 4.0</div>
+</footer>
+
+</body>
+</html>
