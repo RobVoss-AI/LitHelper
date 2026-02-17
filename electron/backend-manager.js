@@ -15,14 +15,14 @@ function startBackend() {
       // In production, use the PyInstaller binary
       const binaryPath = path.join(process.resourcesPath, 'backend', 'lithelper-backend');
       backendProcess = spawn(binaryPath, [], {
-        env: { ...process.env, LITHELPER_PORT: String(PORT) },
+        env: { ...process.env, LITHELPER_BACKEND_PORT: String(PORT) },
         stdio: 'pipe',
       });
     } else {
       // In development, use uvicorn
       backendProcess = spawn('python', ['-m', 'uvicorn', 'app.main:app', '--port', String(PORT)], {
         cwd: path.join(__dirname, '..', 'backend'),
-        env: { ...process.env, LITHELPER_PORT: String(PORT) },
+        env: { ...process.env, LITHELPER_BACKEND_PORT: String(PORT) },
         stdio: 'pipe',
       });
     }

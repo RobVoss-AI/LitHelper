@@ -53,3 +53,9 @@ app.include_router(monitors.router, prefix="/api")
 app.include_router(import_export.router, prefix="/api")
 app.include_router(zotero.router, prefix="/api")
 app.include_router(sharing.router, prefix="/api")
+
+
+if __name__ == "__main__":
+    import uvicorn
+    from app.config import settings
+    uvicorn.run(app, host="127.0.0.1", port=settings.backend_port)
